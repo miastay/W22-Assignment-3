@@ -60,21 +60,26 @@ export class Assignment3 extends Scene {
         program_state.projection_transform = Mat4.perspective(
             Math.PI / 4, context.width / context.height, .1, 1000);
 
+        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
+        const red = hex_color("#fac91a");
+        let t_tens = (t/(10 / Math.PI)) - Math.PI;
+        let linear_color = (-1 / Math.PI)*Math.acos(Math.cos((Math.PI * t)/10 - Math.PI)) + 1;
+        let sun_color = color(1, linear_color, linear_color, 1)
+        let sun_scale = (Math.cos(t_tens)+2);
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
 
         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 0, 0, 1);
         // The parameters of the Light are: position, color, size
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
+        program_state.lights = [new Light(light_position, sun_color, 10**(sun_scale))];
 
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        const red = hex_color("#fac91a");
+        
         let model_transform = Mat4.identity();
-        let tten = (t/(10 / Math.PI)) - Math.PI;
-        let linear = (-1 / Math.PI)*Math.acos(Math.cos((Math.PI * t)/10 - Math.PI)) + 1;
-        this.shapes.sphere.draw(context, program_state, Mat4.scale((Math.cos(tten)+2), (Math.cos(tten)+2), (Math.cos(tten)+2)), this.materials.sun.override({color: color(1, linear, linear, 1)}));
+        
+        //draw sun
+        this.shapes.sphere.draw(context, program_state, Mat4.scale(sun_scale, sun_scale, sun_scale), this.materials.sun.override({color: sun_color}));
 
         //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
     }
