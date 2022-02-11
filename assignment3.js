@@ -26,6 +26,8 @@ export class Assignment3 extends Scene {
             test2: new Material(new Gouraud_Shader(),
                 {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
             ring: new Material(new Ring_Shader()),
+            sun: new Material(new defs.Phong_Shader(),
+                {ambient: 1, diffusivity: .6, color: hex_color("#ffffff")}),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
             //        (Requirement 4)
         }
@@ -62,16 +64,19 @@ export class Assignment3 extends Scene {
         // this.shapes.[XXX].draw([XXX]) // <--example
 
         // TODO: Lighting (Requirement 2)
-        const light_position = vec4(0, 5, 5, 1);
+        const light_position = vec4(0, 0, 0, 1);
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
         // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        const yellow = hex_color("#fac91a");
+        const red = hex_color("#fac91a");
         let model_transform = Mat4.identity();
+        let tten = (t/(10 / Math.PI)) - Math.PI;
+        let linear = (-1 / Math.PI)*Math.acos(Math.cos((Math.PI * t)/10 - Math.PI)) + 1;
+        this.shapes.sphere.draw(context, program_state, Mat4.scale((Math.cos(tten)+2), (Math.cos(tten)+2), (Math.cos(tten)+2)), this.materials.sun.override({color: color(1, linear, linear, 1)}));
 
-        this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
+        //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
     }
 }
 
