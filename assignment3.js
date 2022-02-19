@@ -11,7 +11,7 @@ export class Assignment3 extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-            torus: new defs.Torus(15, 15),
+            torus: new defs.Torus(40, 40),
             torus2: new defs.Torus(3, 15),
             sphere_4: new defs.Subdivision_Sphere(4),
             sphere_2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
@@ -105,13 +105,17 @@ export class Assignment3 extends Scene {
     
 
         //model_transform = Mat4.rotation(t*0.4, 0, 0, 1)
-        model_transform = model_transform.times(Mat4.rotation(t*0.4, 1, 0, 1))
-        model_transform = model_transform.times(Mat4.translation(11, 0, 0))
-        model_transform = model_transform.times(Mat4.rotation(0, 90 + 0.2*Math.sin(t*5), 0, 1))
-        model_transform = model_transform.times(Mat4.scale(1, 2, 1))
+        // model_transform = model_transform.times(Mat4.rotation(t*0.4, 1, 0, 1))
+        // model_transform = model_transform.times(Mat4.translation(11, 0, 0))
+        // model_transform = model_transform.times(Mat4.rotation(0, 90 + 0.2*Math.sin(t*5), 0, 1))
+        // model_transform = model_transform.times(Mat4.scale(1, 2, 1))
         
+        model_transform = Mat4.rotation(t*0.5, 0, 0, 1).times(Mat4.translation(11, 0, 0));
+        model_transform = model_transform.times(Mat4.rotation(1, 50*Math.sin(t*0.5), 0, t*1.5))
 
-        //this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_3)
+        this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_3);
+        this.shapes.torus.draw(context, program_state, model_transform.times(Mat4.scale(4.0, 4.0, 0.1)), this.materials.ring);
+        
     }
 }
 
@@ -282,28 +286,32 @@ class Ring_Shader extends Shader {
         precision mediump float;
         varying vec4 point_position;
         varying vec4 center;
+
         `;
     }
 
     vertex_glsl_code() {
         // ********* VERTEX SHADER *********
-        // TODO:  Complete the main function of the vertex shader (Extra Credit Part II).
+        // TODO:  Complete the main function of the vertex shader
         return this.shared_glsl_code() + `
         attribute vec3 position;
         uniform mat4 model_transform;
         uniform mat4 projection_camera_model_transform;
         
         void main(){
-          
+            center = model_transform * vec4(1, 1, 1, 1);
+            point_position = center + (model_transform * vec4( position, 1.0 ));
+            gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
         }`;
     }
 
     fragment_glsl_code() {
         // ********* FRAGMENT SHADER *********
-        // TODO:  Complete the main function of the fragment shader (Extra Credit Part II).
+        // TODO:  Complete the main function of the fragment shader
         return this.shared_glsl_code() + `
         void main(){
-          
+            gl_FragColor = vec4( 0.69, 0.51, 0.251, 1.0 );
+            gl_FragColor *= (sin(distance(point_position, center)*4.0));
         }`;
     }
 }
