@@ -13,7 +13,9 @@ export class Assignment3 extends Scene {
         this.shapes = {
             torus: new defs.Torus(15, 15),
             torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4),
+            sphere_4: new defs.Subdivision_Sphere(4),
+            sphere_2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
+            sphere_3: new defs.Subdivision_Sphere(3),
             circle: new defs.Regular_2D_Polygon(1, 15),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
@@ -28,6 +30,14 @@ export class Assignment3 extends Scene {
             ring: new Material(new Ring_Shader()),
             sun: new Material(new defs.Phong_Shader(),
                 {ambient: 1, diffusivity: .6, color: hex_color("#ffffff")}),
+            planet_1: new Material(new defs.Phong_Shader(),
+                {ambient: 0, diffusivity: 1, color: color(0.5, 0.5, 0.5, 1)}),
+            planet_2_phong: new Material(new defs.Phong_Shader(),
+                {ambient: 0, diffusivity: 1, color: hex_color("#80FFFF")}),
+            planet_2_gouraud: new Material(new Gouraud_Shader(),
+                {ambient: 0, diffusivity: 1, color: hex_color("#80FFFF")}),
+            planet_3: new Material(new defs.Phong_Shader(),
+                {ambient: 0, diffusivity: 1, specularity: 1, color: hex_color("#B08040")}),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
             //        (Requirement 4)
         }
@@ -62,10 +72,11 @@ export class Assignment3 extends Scene {
 
         const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
         const red = hex_color("#fac91a");
-        let t_tens = (t/(10 / Math.PI)) - Math.PI;
-        let linear_color = (-1 / Math.PI)*Math.acos(Math.cos((Math.PI * t)/10 - Math.PI)) + 1;
+        const period = 5;   //in seconds
+        let t_modified = (t/(period / Math.PI)) - Math.PI;
+        let linear_color = (-1 / Math.PI)*Math.acos(Math.cos((Math.PI * t)/period - Math.PI)) + 1;
         let sun_color = color(1, linear_color, linear_color, 1)
-        let sun_scale = (Math.cos(t_tens)+2);
+        let sun_scale = (Math.cos(t_modified)+2);
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
 
@@ -79,9 +90,28 @@ export class Assignment3 extends Scene {
         let model_transform = Mat4.identity();
         
         //draw sun
-        this.shapes.sphere.draw(context, program_state, Mat4.scale(sun_scale, sun_scale, sun_scale), this.materials.sun.override({color: sun_color}));
+        this.shapes.sphere_4.draw(context, program_state, Mat4.scale(sun_scale, sun_scale, sun_scale), this.materials.sun.override({color: sun_color}));
 
+        /*      Draw Planets
+        */
+
+        //Planet 1: Gray, 2 subdivisions, flat shaded, diffuse only.
+        this.shapes.sphere_2.draw(context, program_state, Mat4.rotation(t, 0, 0, 1).times(Mat4.translation(5, 0, 0)), this.materials.planet_1)
+        
+        
+        //Planet 2: Swampy green-blue (suggest color #80FFFF), 3 subdivisions, maximum specular, low diffuse. Apply Gouraud shading to it every odd second, but Phong shading every even second.
+        this.shapes.sphere_3.draw(context, program_state, Mat4.rotation(t*0.7, 0, 0, 1).times(Mat4.translation(8, 0, 0)), (Number.parseInt(t)%2 == 0 ? this.materials.planet_2_phong : this.materials.planet_2_gouraud))
         //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
+    
+
+        //model_transform = Mat4.rotation(t*0.4, 0, 0, 1)
+        model_transform = model_transform.times(Mat4.rotation(t*0.4, 1, 0, 1))
+        model_transform = model_transform.times(Mat4.translation(11, 0, 0))
+        model_transform = model_transform.times(Mat4.rotation(0, 90 + 0.2*Math.sin(t*5), 0, 1))
+        model_transform = model_transform.times(Mat4.scale(1, 2, 1))
+        
+
+        //this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_3)
     }
 }
 
@@ -109,6 +139,7 @@ class Gouraud_Shader extends Shader {
         // on to the next phase (fragment shader), then interpolated per-fragment, weighted by the
         // pixel fragment's proximity to each of the 3 vertices (barycentric interpolation).
         varying vec3 N, vertex_worldspace;
+        varying vec4 vertex_color;
         // ***** PHONG SHADING HAPPENS HERE: *****                                       
         vec3 phong_model_lights( vec3 N, vec3 vertex_worldspace ){                                        
             // phong_model_lights():  Add up the lights' contributions.
@@ -156,6 +187,10 @@ class Gouraud_Shader extends Shader {
                 // The final normal vector in screen space.
                 N = normalize( mat3( model_transform ) * normal / squared_scale);
                 vertex_worldspace = ( model_transform * vec4( position, 1.0 ) ).xyz;
+
+                vertex_color = vec4( shape_color.xyz * ambient, shape_color.w );
+                // Compute the final color with contributions from lights:
+                vertex_color.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
             } `;
     }
 
@@ -167,8 +202,8 @@ class Gouraud_Shader extends Shader {
             void main(){                                                           
                 // Compute an initial (ambient) color:
                 gl_FragColor = vec4( shape_color.xyz * ambient, shape_color.w );
-                // Compute the final color with contributions from lights:
-                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+                // Compute the final color from the vertices:
+                gl_FragColor.xyz += vertex_color.xyz;
             } `;
     }
 
