@@ -114,7 +114,7 @@ export class Assignment3 extends Scene {
         // Planet 3
         
         model_transform = Mat4.rotation(t*0.5, 0, 0, 1).times(Mat4.translation(11, 0, 0));
-        model_transform = model_transform.times(Mat4.rotation(1, 50*Math.sin(t*0.5), 0, t*1.5))
+        model_transform = model_transform.times(Mat4.rotation(t*1.5, 0, 1*Math.sin(t*0.5), 1))
 
         this.planet_3 = model_transform;
         this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_3);
@@ -130,10 +130,16 @@ export class Assignment3 extends Scene {
         this.moon = model_transform;
         this.shapes.sphere_1.draw(context, program_state, model_transform, this.materials.planet_4_moon)
         
+        let attach_mat = program_state.camera_inverse;
         if(this.attached) {
-            program_state.set_camera(Mat4.inverse(this.attached().times(Mat4.translation(0.0, 0.0, 5.0))));
+            if(this.attached()) {
+                attach_mat = Mat4.inverse(this.attached().times(Mat4.translation(0.0, 0.0, 5.0)));
+            } else {
+                attach_mat = this.initial_camera_location;
+            }
         }
-            
+        program_state.camera_inverse = attach_mat.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, 0.1));
+        
     }
 }
 
