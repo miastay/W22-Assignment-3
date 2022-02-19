@@ -13,9 +13,10 @@ export class Assignment3 extends Scene {
         this.shapes = {
             torus: new defs.Torus(40, 40),
             torus2: new defs.Torus(3, 15),
-            sphere_4: new defs.Subdivision_Sphere(4),
+            sphere_1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
             sphere_2: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
             sphere_3: new defs.Subdivision_Sphere(3),
+            sphere_4: new defs.Subdivision_Sphere(4),
             circle: new defs.Regular_2D_Polygon(1, 15),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
@@ -38,6 +39,10 @@ export class Assignment3 extends Scene {
                 {ambient: 0, diffusivity: 1, color: hex_color("#80FFFF")}),
             planet_3: new Material(new defs.Phong_Shader(),
                 {ambient: 0, diffusivity: 1, specularity: 1, color: hex_color("#B08040")}),
+            planet_4: new Material(new defs.Phong_Shader(),
+                {ambient: 0, diffusivity: 1, specularity: 1, color: color(0.4, 0.4, 1.0, 1)}),
+            planet_4_moon: new Material(new defs.Phong_Shader(),
+                {ambient: 0, diffusivity: 1, specularity: 1, color: color(1.0, 0.4, 1.0, 1)}),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
             //        (Requirement 4)
         }
@@ -104,17 +109,21 @@ export class Assignment3 extends Scene {
         //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
     
 
-        //model_transform = Mat4.rotation(t*0.4, 0, 0, 1)
-        // model_transform = model_transform.times(Mat4.rotation(t*0.4, 1, 0, 1))
-        // model_transform = model_transform.times(Mat4.translation(11, 0, 0))
-        // model_transform = model_transform.times(Mat4.rotation(0, 90 + 0.2*Math.sin(t*5), 0, 1))
-        // model_transform = model_transform.times(Mat4.scale(1, 2, 1))
+        // Planet 3
         
         model_transform = Mat4.rotation(t*0.5, 0, 0, 1).times(Mat4.translation(11, 0, 0));
         model_transform = model_transform.times(Mat4.rotation(1, 50*Math.sin(t*0.5), 0, t*1.5))
 
         this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_3);
         this.shapes.torus.draw(context, program_state, model_transform.times(Mat4.scale(4.0, 4.0, 0.1)), this.materials.ring);
+
+        // Planet 4: Soft light blue, 4 subdivisions, smooth phong, high specular. Add a moon for this planet. The moon has 1 subdivision, with flat shading, any material, and a small orbital distance around the planet.
+
+        model_transform = Mat4.rotation(t*0.3, 0, 0, 1).times(Mat4.translation(14, 0, 0));
+        this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_4);
+
+        model_transform = model_transform.times(Mat4.rotation(t*0.7, 0, 0, 1).times(Mat4.translation(3, 0, 0)));
+        this.shapes.sphere_1.draw(context, program_state, model_transform, this.materials.planet_4_moon)
         
     }
 }
@@ -299,9 +308,12 @@ class Ring_Shader extends Shader {
         uniform mat4 projection_camera_model_transform;
         
         void main(){
-            center = model_transform * vec4(1, 1, 1, 1);
-            point_position = center + (model_transform * vec4( position, 1.0 ));
-            gl_Position = projection_camera_model_transform * vec4( position, 1.0 );
+
+            gl_Position = projection_camera_model_transform * vec4( position, 1.0 ); 
+
+            center = model_transform * vec4( 0, 0, 0, 1 );
+            point_position = model_transform * vec4( position, 1 ); 
+            
         }`;
     }
 
@@ -311,7 +323,7 @@ class Ring_Shader extends Shader {
         return this.shared_glsl_code() + `
         void main(){
             gl_FragColor = vec4( 0.69, 0.51, 0.251, 1.0 );
-            gl_FragColor *= (sin(distance(point_position, center)*4.0));
+            gl_FragColor.xyz *= (   sin(    distance(center, point_position) * 10.0   )   );
         }`;
     }
 }
