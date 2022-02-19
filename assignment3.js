@@ -101,12 +101,14 @@ export class Assignment3 extends Scene {
         */
 
         //Planet 1: Gray, 2 subdivisions, flat shaded, diffuse only.
-        this.shapes.sphere_2.draw(context, program_state, Mat4.rotation(t, 0, 0, 1).times(Mat4.translation(5, 0, 0)), this.materials.planet_1)
+        this.planet_1 = Mat4.rotation(t, 0, 0, 1).times(Mat4.translation(5, 0, 0));
+        this.shapes.sphere_2.draw(context, program_state, this.planet_1, this.materials.planet_1)
         
         
         //Planet 2: Swampy green-blue (suggest color #80FFFF), 3 subdivisions, maximum specular, low diffuse. Apply Gouraud shading to it every odd second, but Phong shading every even second.
-        this.shapes.sphere_3.draw(context, program_state, Mat4.rotation(t*0.7, 0, 0, 1).times(Mat4.translation(8, 0, 0)), (Number.parseInt(t)%2 == 0 ? this.materials.planet_2_phong : this.materials.planet_2_gouraud))
-        //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
+        this.planet_2 = Mat4.rotation(t*0.7, 0, 0, 1).times(Mat4.translation(8, 0, 0));
+        this.shapes.sphere_3.draw(context, program_state, this.planet_2, (Number.parseInt(t)%2 == 0 ? this.materials.planet_2_phong : this.materials.planet_2_gouraud))
+        
     
 
         // Planet 3
@@ -114,17 +116,24 @@ export class Assignment3 extends Scene {
         model_transform = Mat4.rotation(t*0.5, 0, 0, 1).times(Mat4.translation(11, 0, 0));
         model_transform = model_transform.times(Mat4.rotation(1, 50*Math.sin(t*0.5), 0, t*1.5))
 
+        this.planet_3 = model_transform;
         this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_3);
         this.shapes.torus.draw(context, program_state, model_transform.times(Mat4.scale(4.0, 4.0, 0.1)), this.materials.ring);
 
         // Planet 4: Soft light blue, 4 subdivisions, smooth phong, high specular. Add a moon for this planet. The moon has 1 subdivision, with flat shading, any material, and a small orbital distance around the planet.
 
         model_transform = Mat4.rotation(t*0.3, 0, 0, 1).times(Mat4.translation(14, 0, 0));
+        this.planet_4 = model_transform;
         this.shapes.sphere_4.draw(context, program_state, model_transform, this.materials.planet_4);
 
         model_transform = model_transform.times(Mat4.rotation(t*0.7, 0, 0, 1).times(Mat4.translation(3, 0, 0)));
+        this.moon = model_transform;
         this.shapes.sphere_1.draw(context, program_state, model_transform, this.materials.planet_4_moon)
         
+        if(this.attached) {
+            program_state.set_camera(Mat4.inverse(this.attached().times(Mat4.translation(0.0, 0.0, 5.0))));
+        }
+            
     }
 }
 
